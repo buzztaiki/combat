@@ -33,8 +33,10 @@
   :group 'company)
 
 (defcustom combat-transformers nil
-  "Transformer functions for `combat-complete'."
-  :type '(repeat function))
+  "Transformer functions for `combat-mode'."
+  :type '(repeat (choice (const combat-backend-name-annotation-transformer)
+                         (const combat-with-yasnippet-transformer)
+                         (function :tag "Other"))))
 
 (defun combat--backend-name (backend)
   (let ((name (symbol-name backend)))
@@ -49,6 +51,7 @@
       result)))
 
 (defun combat-backend-name-annotation-transformer (backend)
+  "A transformer that add BACKEND name to candidate annotation."
   (cond ((or (null backend) (keywordp backend)) backend)
         ((symbolp backend) (lambda (command &rest args) (combat--add-backend-name-to-annotation backend command args)))
         ((consp backend) (cons (combat-backend-name-annotation-transformer (car backend))
@@ -65,6 +68,7 @@
               (_ (error "Unknown method %s" method))))))
 
 (defun combat-with-yasnippet-transformer (backend)
+  "A transformer that add `company-yasnippet' to BACKEND using `:with'."
   (combat-combine-backends backend 'company-yasnippet :with))
 
 (defun combat--compose (fn &rest fns)
