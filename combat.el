@@ -79,11 +79,20 @@
     (mapcar (apply #'combat--compose (reverse combat-transformers))
             backends)))
 
-(defun combat-complete ()
-  "Apply all `combat-transformers' to `company-backends' and do `company-complete'."
-  (interactive)
-  (let ((company-backends (combat--transform-backends company-backends)))
-    (company-complete)))
+(define-minor-mode combat-mode
+  "Toggle combat mode on or off.
+Turn combat mode on if ARG is positive, off otherwise."
+  :global t
+  :lighter " combat")
+
+(defun combat-transform-backends-advice (oldfun &rest args)
+  "Apply all `combat-transformers' to `company-backends' and call OLDFUN with ARGS."
+  (if combat-mode
+      (let ((company-backends (combat--transform-backends company-backends)))
+        (apply oldfun args))
+    (apply oldfun args)))
+
+(advice-add 'company--begin-new :around 'combat-transform-backends-advice)
 
 (provide 'combat)
 
