@@ -42,15 +42,18 @@
         (replace-match "" nil nil name)
       name)))
 
-;; TODO group backend
+(defun combat--add-backend-name-to-annotation (backend command args)
+  (let ((result (apply backend command args)))
+    (if (eq command 'annotation)
+        (concat result " " (combat--backend-name backend))
+      result)))
+
 (defun combat-backend-name-annotation-transformer (backend)
-  (if (not (symbolp backend))
-      backend
-    (lambda (command &rest args)
-      (let ((result (apply backend command args)))
-        (if (eq command 'annotation)
-            (concat result " " (combat--backend-name backend))
-          result)))))
+  (cond ((or (null backend) (keywordp backend)) backend)
+        ((symbolp backend) (lambda (command &rest args) (combat--add-backend-name-to-annotation backend command args)))
+        ((consp backend) (cons (combat-backend-name-annotation-transformer (car backend))
+                               (combat-backend-name-annotation-transformer (cdr backend))))
+        (t backend)))
   
 (defun combat-combine-backends (backend second-backend method)
   (if (and (consp backend) (memq second-backend backend))
